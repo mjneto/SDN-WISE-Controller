@@ -20,6 +20,10 @@ import com.github.sdnwiselab.sdnwise.adapter.Adapter;
 import com.github.sdnwiselab.sdnwise.packet.NetworkPacket;
 import com.github.sdnwiselab.sdnwise.topology.NetworkGraph;
 import com.github.sdnwiselab.sdnwise.util.NodeAddress;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.LinkedList;
 //import org.graphstream.algorithm.Dijkstra;
 import org.graphstream.graph.Node;
@@ -69,9 +73,7 @@ public class ControllerDijkstra extends Controller {
             LinkedList<NodeAddress> path = null;
 
             if (sourceNode != null && destinationNode != null) {
-            	//System.out.println("entra");
                 if (!lastSource.equals(source) || lastModification != networkGraph.getLastModification()) {
-                	//System.out.println("acho que passa");
                     results.clear();
                     dijkstra.init(networkGraph.getGraph());
                     dijkstra.setSource(networkGraph.getNode(source));
@@ -79,21 +81,62 @@ public class ControllerDijkstra extends Controller {
                     lastSource = source;
                     lastModification = networkGraph.getLastModification();
                 } else {
-                	//System.out.println("será que passa?");
                     path = results.get(data.getDst());
                 }
                 if (path == null) {
-                	//System.out.println("hmmm passa?");
                     path = new LinkedList<>();
                     for (Node node : dijkstra.getPathNodes(networkGraph.getNode(destination))) {
-                    	//System.out.println("certeza que passa!");
                         path.push((NodeAddress) node.getAttribute("nodeAddress"));
                     }
+
+                    //create a file in same directory
+                    File pathsFile = new File("pathsFile.txt");
+
+                    //write the source and destination to the file on the same line
+                    try {
+                        //test to know if a path has been choosen
+                        if (path.size() > 0) {
+                            //split the source and destination strings
+                            String[] sourceSplit = source.split("\\.");
+                            String[] destinationSplit = destination.split("\\.");
+
+                            //write the source and destination to the file
+                            FileWriter fw = new FileWriter(pathsFile, true);
+                            fw.write(sourceSplit[sourceSplit.length-1] + " " + destinationSplit[destinationSplit.length-1] + " : ");
+
+                            //write the path to the file
+                            for (int i = 0; i < path.size(); i++) {
+                                String[] pathSplit = path.get(i).toString().split("\\.");
+
+                                fw.write(pathSplit[pathSplit.length-1] + " ");
+                            }
+
+                            fw.write(System.lineSeparator());
+                            fw.close();
+
+                            //delete after execution
+                            pathsFile.deleteOnExit();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    /*
+                    //create a string with the source and destination
+                    System.out.print("Src: " + sourceSplit[sourceSplit.length-1] + " Dst: " + destinationSplit[destinationSplit.length-1] + " Path: ");
+                    
+                    //loop and print each element of the path and print the address of the node as integer
+                    for (int i = 0; i < path.size(); i++) {
+                        String[] pathSplit = path.get(i).toString().split("\\.");
+
+                        System.out.print(Integer.valueOf(pathSplit[pathSplit.length-1]) + " ");
+                    }
+                    System.out.println(); */
+                    
                     System.out.println("[CTRL]: " + path);
                     results.put(data.getDst(), path);
                 }
                 if (path.size() > 1) {
-                	//System.out.println("e aqui? passa?");
                     sendPath((byte) data.getNetId(), path.getFirst(), path);
 
                     data.unsetRequestFlag();
