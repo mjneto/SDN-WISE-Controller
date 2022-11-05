@@ -85,55 +85,21 @@ public class ControllerDijkstra extends Controller {
                 }
                 if (path == null) {
                     path = new LinkedList<>();
+                    int lowBattNodeValue = 999;
+                    String lowBattNodeId = "";
                     for (Node node : dijkstra.getPathNodes(networkGraph.getNode(destination))) {
                         path.push((NodeAddress) node.getAttribute("nodeAddress"));
-                    }
 
-                    //create a file in same directory
-                    File pathsFile = new File("pathsFile.txt");
-
-                    //write the source and destination to the file on the same line
-                    try {
-                        //test to know if a path has been choosen
-                        if (path.size() > 0) {
-                            //split the source and destination strings
-                            String[] sourceSplit = source.split("\\.");
-                            String[] destinationSplit = destination.split("\\.");
-
-                            //write the source and destination to the file
-                            FileWriter fw = new FileWriter(pathsFile, true);
-                            fw.write(sourceSplit[sourceSplit.length-1] + " " + destinationSplit[destinationSplit.length-1] + " : ");
-
-                            //write the path to the file
-                            for (int i = 0; i < path.size(); i++) {
-                                String[] pathSplit = path.get(i).toString().split("\\.");
-
-                                fw.write(pathSplit[pathSplit.length-1] + " ");
-                            }
-
-                            fw.write(System.lineSeparator());
-                            fw.close();
-
-                            //delete after execution
-                            pathsFile.deleteOnExit();
+                        //check if battery level of the current node is lower than the previous one
+                        if ((int) node.getAttribute("battery") < lowBattNodeValue) {
+                            lowBattNodeValue = (int) node.getAttribute("battery");
+                            lowBattNodeId = node.getId().toString();   
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     }
-
-                    /*
-                    //create a string with the source and destination
-                    System.out.print("Src: " + sourceSplit[sourceSplit.length-1] + " Dst: " + destinationSplit[destinationSplit.length-1] + " Path: ");
                     
-                    //loop and print each element of the path and print the address of the node as integer
-                    for (int i = 0; i < path.size(); i++) {
-                        String[] pathSplit = path.get(i).toString().split("\\.");
-
-                        System.out.print(Integer.valueOf(pathSplit[pathSplit.length-1]) + " ");
-                    }
-                    System.out.println(); */
+                    PathInfo(destination, source, path, lowBattNodeValue, lowBattNodeId);
                     
-                    System.out.println("[CTRL]: " + path);
+                    //System.out.println("[CTRL]: " + path);
                     results.put(data.getDst(), path);
                 }
                 if (path.size() > 1) {
@@ -149,6 +115,39 @@ public class ControllerDijkstra extends Controller {
                     //sendMessage(data.getNetId(), data.getDst(),(byte) 4, new byte[10]);
                 }
             }
+        }
+    }
+
+    /**
+        * Method to write the path information in a file
+        * 
+        * @param destination Destination node
+        * @param source Source node
+        * @param path Path to be written
+        * @param lowBattNodeValue Battery level of the node with the lowest battery level in the path
+        * @param lowBattNodeId Node ID of the node with the lowest battery level in the path
+        */
+    private void PathInfo(String destination, String source, LinkedList<NodeAddress> path, int lowBattNodeValue,
+            String lowBattNodeId) {
+        File pathsFile = new File("pathsFile.txt");
+
+        try {
+            //test to know if a path has been choosen
+            if (path.size() > 0) {
+                FileWriter fw = new FileWriter(pathsFile, true);
+                fw.write(source + " " + destination + " : ");
+                for (int i = 0; i < path.size(); i++) {
+                    fw.write(path.get(i).toString() + " ");
+                }
+                fw.write(": " + lowBattNodeId + " " + lowBattNodeValue);
+                fw.write(System.lineSeparator());
+                fw.close();
+
+                //delete after execution
+                pathsFile.deleteOnExit();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
