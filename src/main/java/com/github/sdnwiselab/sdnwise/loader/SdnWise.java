@@ -21,6 +21,8 @@ import com.github.sdnwiselab.sdnwise.controller.Controller;
 import com.github.sdnwiselab.sdnwise.controller.ControllerFactory;
 import com.github.sdnwiselab.sdnwise.packet.DataPacket;
 import com.github.sdnwiselab.sdnwise.util.NodeAddress;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -93,7 +95,12 @@ public class SdnWise {
             
             NodeAddress dst; 
             NodeAddress src;
-            
+
+            //delete pathsFile before starting
+            File f = new File("pathsFile.txt");
+            if (f.exists()) {
+                f.delete();
+            }
             
             // Then we query the nodes
             while (true){    

@@ -108,6 +108,8 @@ public abstract class Controller implements Observer, Runnable, ControllerInterf
         switch (data.getType()) {
             case SDN_WISE_REPORT:
                 networkGraph.updateMap(new ReportPacket(data));
+                //This call is needed to recalculate the paths in a regular basis
+                manageRoutingRequest(data);
                 break;
             case SDN_WISE_DATA:
             case SDN_WISE_BEACON:

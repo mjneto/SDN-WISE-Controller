@@ -176,9 +176,9 @@ public class NetworkGraph extends Observable {
                 }
                 modified = true;
             }
+        }
             //print the battery level of each node in the path
             System.out.println("Node: " + node.getId() + " Battery: " + node.getAttribute("battery"));       
-        }
 
         if (modified) {
             lastModification++;
