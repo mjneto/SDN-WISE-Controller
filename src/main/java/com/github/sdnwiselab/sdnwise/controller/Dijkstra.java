@@ -348,13 +348,14 @@ public class Dijkstra extends AbstractSpanningTree {
 	}
 	
 	@Override
+	//makeTree called after compute(), maybe here we can specify the low battery node in the path
 	protected void makeTree() {
 		// initialization
 		FibonacciHeap<Double, Node> heap = new FibonacciHeap<Double, Node>();
 		for (Node node : graph) {
 			Data data = new Data();
 			double v = node == source ? getSourceLength()
-					: Double.POSITIVE_INFINITY;
+					: Double.POSITIVE_INFINITY; //boolean statement ? true result : false result;
 			data.fn = heap.add(v, node);
 			data.edgeFromParent = null;
 			node.addAttribute(resultAttribute, data);
@@ -374,6 +375,7 @@ public class Dijkstra extends AbstractSpanningTree {
 				if (dataV.fn == null)
 					continue;
 				double tryDist = dataU.distance + getLength(e, v);
+				//System.out.println("Node " + u.getId() + " to Node " + v.getId() + " = " + tryDist);
 				if (tryDist < dataV.fn.getKey()) {
 					dataV.edgeFromParent = e;
 					heap.decreaseKey(dataV.fn, tryDist);

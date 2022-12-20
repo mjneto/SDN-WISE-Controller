@@ -24,9 +24,11 @@ import com.github.sdnwiselab.sdnwise.util.NodeAddress;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 //import org.graphstream.algorithm.Dijkstra;
 import org.graphstream.graph.Node;
+import org.graphstream.graph.Path;
 
 /**
  * This class implements the Controller class using the Dijkstra routing
@@ -71,6 +73,7 @@ public class ControllerDijkstra extends Controller {
             Node sourceNode = networkGraph.getNode(source);
             Node destinationNode = networkGraph.getNode(destination);
             LinkedList<NodeAddress> path = null;
+            Path chosenPath = null;
 
             if (sourceNode != null && destinationNode != null) {
                 if (!lastSource.equals(source) || lastModification != networkGraph.getLastModification()) {
@@ -85,21 +88,15 @@ public class ControllerDijkstra extends Controller {
                 }
                 if (path == null) {
                     path = new LinkedList<>();
-                    int lowBattNodeValue = 999;
-                    String lowBattNodeId = "";
-                    for (Node node : dijkstra.getPathNodes(networkGraph.getNode(destination))) {
-                        path.push((NodeAddress) node.getAttribute("nodeAddress"));
+                    chosenPath = new Path();
+                    chosenPath = chosePathBetweenAll(chosenPath, destination, source);
 
-                        //check if battery level of the current node is lower than the previous one
-                        if ((int) node.getAttribute("battery") < lowBattNodeValue) {
-                            lowBattNodeValue = (int) node.getAttribute("battery");
-                            lowBattNodeId = node.getId().toString();   
-                        }
+                    //put the chosen path in the path variable
+                    for (Node node : chosenPath.getNodePath()) {
+                        path.add((NodeAddress) node.getAttribute("nodeAddress"));
                     }
-                    
-                    PathInfo(destination, source, path, lowBattNodeValue, lowBattNodeId);
-                    
-                    //System.out.println("[CTRL]: " + path);
+                                        
+                    System.out.println("[CTRL]: " + path);
                     results.put(data.getDst(), path);
                 }
                 if (path.size() > 1) {
@@ -119,6 +116,53 @@ public class ControllerDijkstra extends Controller {
     }
 
     /**
+        * This method choose the path which has the node with higher battery level between the lowests.
+        * Ex: 
+        *  P1: [10 - 5 - 20]
+        *  P2: [10 - 2 - 25]
+        * The path choosen will be P2, because the node 2 in P2
+        * has the highest battery level between the lowests [5, 2]
+    */
+    private Path chosePathBetweenAll(Path chosenPath, String destination, String source) {
+        /*
+         * create two hasmaps, one for the lowest battery in the path and one for
+         * keep tracking of the node who has the highest battery level between the lowests
+         */
+        HashMap<String, String> lowBattNode = new HashMap<>();
+        HashMap<String, String> highLowBattNode = new HashMap<>();
+
+        lowBattNode.put("id", "0");
+        lowBattNode.put("battery", "999");
+        highLowBattNode.put("id", "0");
+        highLowBattNode.put("battery", "0");
+    
+        for (Path allPath : dijkstra.getAllPaths(networkGraph.getNode(destination))) {
+            //System.out.println("1 - " + source + " " + destination + " = " + allPath.toString());
+            for(Node node : allPath.getNodePath()) {
+                //System.out.println("2 - Node: " + node.getId() + " Battery: " + node.getAttribute("battery"));
+                if((int) node.getAttribute("battery") < Integer.parseInt(lowBattNode.get("battery"))) {
+                    lowBattNode.put("battery", node.getAttribute("battery").toString());
+                    lowBattNode.put("id", node.getId().toString());
+                    //System.out.println("Lowest Battery: " + lowBattNode.get("battery") + " Node: " + lowBattNode.get("id"));
+                }
+            }
+            //After getting the lowest battery node in that path, check if it is higher than the previous one
+            if(Integer.parseInt(lowBattNode.get("battery")) > Integer.parseInt(highLowBattNode.get("battery"))) {
+                highLowBattNode.put("battery", lowBattNode.get("battery"));
+                highLowBattNode.put("id", lowBattNode.get("id"));
+                //System.out.println("Highest Lowest Battery: " + highLowBattNode.get("battery") + " Node: " + highLowBattNode.get("id"));
+                //if it is, then this path is the chosen one
+                chosenPath = allPath;
+            }
+            //reset for the next path
+            lowBattNode.put("battery", "999");
+            lowBattNode.put("id", "0");
+        }
+        PathInfo(destination, source, chosenPath, highLowBattNode.get("battery"), highLowBattNode.get("id"));
+        return chosenPath;
+    }
+
+    /**
         * Method to write the path information in a file
         * 
         * @param destination Destination node
@@ -127,7 +171,7 @@ public class ControllerDijkstra extends Controller {
         * @param lowBattNodeValue Battery level of the node with the lowest battery level in the path
         * @param lowBattNodeId Node ID of the node with the lowest battery level in the path
         */
-    private void PathInfo(String destination, String source, LinkedList<NodeAddress> path, int lowBattNodeValue,
+    private void PathInfo(String destination, String source, Path path, String lowBattNodeValue,
             String lowBattNodeId) {
         File pathsFile = new File("pathsFile.txt");
 
@@ -136,9 +180,7 @@ public class ControllerDijkstra extends Controller {
             if (path.size() > 0) {
                 FileWriter fw = new FileWriter(pathsFile, true);
                 fw.write(source + " " + destination + " : ");
-                for (int i = 0; i < path.size(); i++) {
-                    fw.write(path.get(i).toString() + " ");
-                }
+                fw.write(path.toString());
                 fw.write(": " + lowBattNodeId + " " + lowBattNodeValue);
                 fw.write(System.lineSeparator());
                 fw.close();
