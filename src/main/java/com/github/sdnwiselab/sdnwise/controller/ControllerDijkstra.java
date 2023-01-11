@@ -21,7 +21,9 @@ import com.github.sdnwiselab.sdnwise.packet.NetworkPacket;
 import com.github.sdnwiselab.sdnwise.topology.NetworkGraph;
 import com.github.sdnwiselab.sdnwise.util.NodeAddress;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
@@ -45,7 +47,7 @@ public class ControllerDijkstra extends Controller {
     private String lastSource = "";
     private long lastModification = -1;
 
-    /*
+    /**
      * Constructor method fo ControllerDijkstra.
      * 
      * @param id ControllerId object.
@@ -96,7 +98,7 @@ public class ControllerDijkstra extends Controller {
                         path.add((NodeAddress) node.getAttribute("nodeAddress"));
                     }
                                         
-                    System.out.println("[CTRL]: " + path);
+                    System.out.println("[CTRL]: src: " + source + " / dst: " + destination + " / path: " + path.toString());
                     results.put(data.getDst(), path);
                 }
                 if (path.size() > 1) {
@@ -117,11 +119,18 @@ public class ControllerDijkstra extends Controller {
 
     /**
         * This method choose the path which has the node with higher battery level between the lowests.
+        * First it call getAllPaths() method from Dijkstra class, which returns all paths between two nodes (node - sink, sink - node).
+        * Then it goes through all paths calculated, checking all nodes for the one with the lowest battery level in the that path.
+        * After go through a path, it check if the node with the lowest battery level is the highest between the lowests.
+        * If it is, it will be the chosen path.
+        * 
         * Ex: 
         *  P1: [10 - 5 - 20]
         *  P2: [10 - 2 - 25]
         * The path choosen will be P2, because the node 2 in P2
         * has the highest battery level between the lowests [5, 2]
+        * 
+        * @author mjneto
     */
     private Path chosePathBetweenAll(Path chosenPath, String destination, String source) {
         /*
@@ -146,12 +155,10 @@ public class ControllerDijkstra extends Controller {
                     //System.out.println("Lowest Battery: " + lowBattNode.get("battery") + " Node: " + lowBattNode.get("id"));
                 }
             }
-            //After getting the lowest battery node in that path, check if it is higher than the previous one
             if(Integer.parseInt(lowBattNode.get("battery")) > Integer.parseInt(highLowBattNode.get("battery"))) {
                 highLowBattNode.put("battery", lowBattNode.get("battery"));
                 highLowBattNode.put("id", lowBattNode.get("id"));
                 //System.out.println("Highest Lowest Battery: " + highLowBattNode.get("battery") + " Node: " + highLowBattNode.get("id"));
-                //if it is, then this path is the chosen one
                 chosenPath = allPath;
             }
             //reset for the next path
@@ -163,33 +170,45 @@ public class ControllerDijkstra extends Controller {
     }
 
     /**
-        * Method to write the path information in a file
+        * Method to write the path information in a file. It will read the file searching for strings of the
+        * the source and destination nodes. If finds it, it will overwrite the line with the new path information.
+        * This read all lines and rewrite the file as a whole, so maybe it will be slower.
         * 
         * @param destination Destination node
         * @param source Source node
         * @param path Path to be written
         * @param lowBattNodeValue Battery level of the node with the lowest battery level in the path
         * @param lowBattNodeId Node ID of the node with the lowest battery level in the path
+        *
+        * @author mjneto
         */
-    private void PathInfo(String destination, String source, Path path, String lowBattNodeValue,
-            String lowBattNodeId) {
-        File pathsFile = new File("pathsFile.txt");
+    private void PathInfo(String destination, String source, Path path, String lowBattNodeValue, String lowBattNodeId) {
+        File modifyFile = new File("pathsFile.txt");
+        BufferedReader readerFile = null;
+        FileWriter fw = null;
+        String newLine = source + ":" + destination + ":" + path.toString() + ":" + lowBattNodeId + ":" + lowBattNodeValue;
+        String modifiedInfo = "";
 
-        try {
-            //test to know if a path has been choosen
-            if (path.size() > 0) {
-                FileWriter fw = new FileWriter(pathsFile, true);
-                fw.write(source + " " + destination + " : ");
-                fw.write(path.toString());
-                fw.write(": " + lowBattNodeId + " " + lowBattNodeValue);
-                fw.write(System.lineSeparator());
+        if(path.size() > 0) {
+            try {
+                readerFile = new BufferedReader(new FileReader(modifyFile));
+                String line = readerFile.readLine();
+
+                while(line != null) {
+                    if(source.equals(line.split(":")[0]) && destination.equals(line.split(":")[1])) {
+                        modifiedInfo += newLine + System.getProperty("line.separator");
+                    } else {
+                        modifiedInfo += line + System.getProperty("line.separator");
+                    }
+                    line = readerFile.readLine();
+                }
+                readerFile.close();
+                fw = new FileWriter(modifyFile);
+                fw.write(modifiedInfo);
                 fw.close();
-
-                //delete after execution
-                pathsFile.deleteOnExit();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
