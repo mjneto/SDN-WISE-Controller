@@ -189,7 +189,7 @@ public class ControllerDijkstra extends Controller {
         String newLine = source + ":" + destination + ":" + path.toString() + ":" + lowBattNodeId + ":" + lowBattNodeValue;
         String modifiedInfo = "";
 
-        if(path.size() > 0) {
+        if(path.size() > 1) {
             try {
                 readerFile = new BufferedReader(new FileReader(modifyFile));
                 String line = readerFile.readLine();

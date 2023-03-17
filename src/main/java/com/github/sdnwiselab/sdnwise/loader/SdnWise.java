@@ -89,8 +89,9 @@ public class SdnWise {
 
     public void startExample() {
         controller = startController("");
+        int numberofNodes = 50;
 
-        initPathsFile();
+        initPathsFile(numberofNodes);
 
         System.out.println("SDN-WISE Controller running....");
         
@@ -103,7 +104,7 @@ public class SdnWise {
 
             // Then we query the nodes
             while (true){    
-                for (int i = 1; i < 12; i++){
+                for (int i = 1; i <= numberofNodes; i++){
                     System.out.println("- quering node " + i);
                     int netId = 1;
                     /*NodeAddress dst = new NodeAddress(i);
@@ -113,7 +114,7 @@ public class SdnWise {
                     src = new NodeAddress(1);
 
                     //System.out.println("src: " + src + " dst: " + dst);
-                    
+                                        
                     DataPacket p = new DataPacket(netId,src,dst);
                     p.setNxhop(src);
                     setAgg(dst, src, netId, p);
@@ -184,11 +185,13 @@ public class SdnWise {
      * 
      * @author: mjneto
      */
-    private void initPathsFile() {
+    private void initPathsFile(int numberofNodes) {
         File f = new File("pathsFile.txt");
+        //TODO: check file location
+        //f.getAsolutePath();
         try {
             FileWriter fw = new FileWriter(f, false);
-            for(int i = 1; i <= 9; i++){
+            for(int i = 1; i <= numberofNodes-1; i++){
                 fw.write("1.0." + String.valueOf(i+1) + ":" + "1.0.1" + System.getProperty("line.separator"));
                 fw.write("1.0.1" + ":" + "1.0." + String.valueOf(i+1) + System.getProperty("line.separator"));
             }
