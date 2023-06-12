@@ -89,7 +89,7 @@ public class SdnWise {
 
     public void startExample() {
         controller = startController("");
-        int numberofNodes = 50;
+        int numberofNodes = 30;
 
         initPathsFile(numberofNodes);
 
@@ -114,7 +114,7 @@ public class SdnWise {
                     src = new NodeAddress(1);
 
                     //System.out.println("src: " + src + " dst: " + dst);
-                                        
+
                     DataPacket p = new DataPacket(netId,src,dst);
                     p.setNxhop(src);
                     setAgg(dst, src, netId, p);
@@ -136,7 +136,7 @@ public class SdnWise {
      * The battery level (hex 0-255) is converted to percentage (0-100). 
      * Then the aggregation rate is set proportional to the battery level (batteryLevel/100) because in the node it will
      * be subtracted from the value (Ex: batteryLevel = 93, divide by 100 = 0.93, rate = 1 - 0.93 = 0.07 => 7%).
-     * If the battery level is 100% the aggregation rate is 0. If the battery level is 0% the aggregation rate is 100%.
+     * If the battery level is 100% the aggregation rate is 0.
      * 
      * @param dst destination
      * @param src source

@@ -127,7 +127,7 @@ public class ControllerDijkstra extends Controller {
         * Ex: 
         *  P1: [10 - 5 - 20]
         *  P2: [10 - 2 - 25]
-        * The path choosen will be P2, because the node 2 in P2
+        * The path choosen will be P1, because the node 2 in P1 
         * has the highest battery level between the lowests [5, 2]
         * 
         * @author mjneto
